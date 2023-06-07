@@ -1,6 +1,12 @@
 // highlight.js
 import log from 'loglevel'
+import { cond, equals, always, T } from 'ramda'
 
+const getColorFromModifier = cond([
+  [equals('alt'), always('navajoWhite')],
+  [equals('command'), always('mistyrose')],
+  [T, always('lightyellow')],
+])
 const Highlighter = (store) => {
   const createHighlightFromSelection = (selection, modifier) => {
     const text = selection.toString()
@@ -9,12 +15,7 @@ const Highlighter = (store) => {
     const range = selection.getRangeAt(0)
     const highlightNode = document.createElement('span')
     highlightNode.className = 'sense-highlight'
-    highlightNode.style.backgroundColor =
-      modifier === 'shift'
-        ? 'lightorange'
-        : modifier === 'command'
-        ? 'lightpink'
-        : 'yellow'
+    highlightNode.style.backgroundColor = getColorFromModifier(modifier)
 
     highlightNode.addEventListener('click', () => {
       // Remove the highlight from the page
