@@ -2,24 +2,23 @@
 import { ref, watchEffect } from 'vue'
 import { useMagicKeys } from '@vueuse/core'
 import { defineCustomElement } from 'vue'
-import {
-  checkActivity,
-  setupActivityListeners,
-  removeActivityListeners,
-  isIdle,
-} from './userActivity'
-import Button from './HighlightButton.vue' // Importing the Vue component into the content
+
+import Button from './HighlightButton.vue'
 import log from 'loglevel'
 import Highlighter from './highlight'
 import createStore from './store'
+import createUserActivity from './userActivity'
+
 const keys = useMagicKeys()
 
 log.setDefaultLevel(log.levels.DEBUG) // Set logging level to DEBUG
 const url = window.location.href
 const store = createStore(url)
 const highlight = Highlighter(store).createHighlightFromSelection
-//? ---- HIGHLIGHT FUNCTIONS
+const userActivity = createUserActivity(store)
 
+// Start tracking user activity
+userActivity.startTracking()
 //add a button to the DOM that will trigger the store.delete() function
 const deleteButton = document.createElement('button')
 deleteButton.innerHTML = 'Delete'
@@ -35,21 +34,7 @@ customElements.define('my-button', defineCustomElement(Button))
 const button = document.createElement('my-button')
 document.body.appendChild(button)
 
-let intervalId
-const secondstoIncrement = 3
-
 log.info(`%c Tracking time spent on ${url}`, 'color: blue;')
-
-setupActivityListeners()
-intervalId = setInterval(() => {
-  checkActivity()
-  if (document.visibilityState === 'visible' && !isIdle) {
-    store.updateActiveTime(secondstoIncrement)
-    log.debug(`User has spent ${store.state.activeTime} seconds on this page.`)
-  } else {
-    log.debug('Page is not visible or user is idle, not counting.')
-  }
-}, secondstoIncrement * 1000)
 
 // mouseup event
 document.addEventListener('mouseup', () => {
@@ -79,9 +64,8 @@ document.addEventListener('mousedown', () => {
 // onbeforeunload event
 window.onbeforeunload = () => {
   log.info(`%c Stopped tracking time spent on ${url}`, 'color: blue;')
-  clearInterval(intervalId)
-  removeActivityListeners()
+  userActivity.stopTracking()
   log.debug(
-    `User has spent total of ${store.state.activeTime} seconds on this page.`
+    `User has spent total of ${store.state.value.activeTime} seconds on this page.`
   )
 }
