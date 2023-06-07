@@ -10,6 +10,7 @@ import {
 } from './userActivity'
 import Button from './HighlightButton.vue' // Importing the Vue component into the content
 import log from 'loglevel'
+import getXPath from 'get-xpath'
 const keys = useMagicKeys()
 
 log.setDefaultLevel(log.levels.DEBUG) // Set logging level to DEBUG
@@ -54,6 +55,29 @@ intervalId = setInterval(() => {
     log.debug('Page is not visible or user is idle, not counting.')
   }
 }, secondstoIncrement * 1000)
+
+// Load the highlights from local storage
+const urlHighlights = pageData.value.highlights
+urlHighlights.forEach(({ text, modifier, xpath }) => {
+  // Locate the highlight node using the saved XPath
+  const highlightNode = document.evaluate(
+    xpath,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue
+  console.log('highlightNode', highlightNode, xpath)
+  if (highlightNode) {
+    // Apply the highlight
+    highlightNode.style.backgroundColor =
+      modifier === 'shift'
+        ? 'lightorange'
+        : modifier === 'command'
+        ? 'lightpink'
+        : 'yellow'
+  }
+})
 
 const { shift, meta: command } = useMagicKeys()
 
@@ -134,9 +158,11 @@ document.addEventListener('mouseup', () => {
       : keys.meta.value
       ? 'command'
       : null
+
+    const xpath = getXPath(highlightNode)
     pageData.value = {
       ...pageData.value,
-      highlights: [...pageData.value.highlights, { text, modifier }],
+      highlights: [...pageData.value.highlights, { text, modifier, xpath }],
     }
   }
 })
