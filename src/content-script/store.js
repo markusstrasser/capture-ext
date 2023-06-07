@@ -27,8 +27,17 @@ const createStore = (url) => ({
   addVisit() {
     this.state.value.visits.push(Date.now())
   },
+  formatHighlightsAsMarkdown() {
+    let markdown = `[${document.title}](${url})\n`
+    this.state.value.highlights.forEach((highlight) => {
+      markdown += ` - ${highlight.text}\n`
+    })
+    return markdown
+  },
 
   deleteStore() {
+    this.state.value = null
+    localStorage.removeItem(url)
     this.state = initState(url)
     return this.state.value
   },

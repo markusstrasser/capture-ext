@@ -3,7 +3,7 @@ import { ref, watchEffect } from 'vue'
 import { useMagicKeys } from '@vueuse/core'
 import { defineCustomElement } from 'vue'
 
-import Button from './HighlightButton.vue'
+import CopyHighlightButton from './CopyHighlights.vue'
 import log from 'loglevel'
 import Highlighter from './highlight'
 import createStore from './store'
@@ -27,13 +27,47 @@ deleteButton.addEventListener('click', () => {
   const v = store.deleteStore()
   log.debug('store deleted', v)
 })
+
+function copyToClipboard(text) {
+  // Create a temporary textarea element
+  const textarea = document.createElement('textarea')
+  textarea.textContent = text
+
+  // Hide the textarea, but don't remove it from the document
+  textarea.style.position = 'fixed' // This avoids scrolling to the bottom
+  textarea.style.opacity = '0'
+
+  // Add the textarea to the document
+  document.body.appendChild(textarea)
+
+  // Select the text
+  textarea.select()
+
+  // Try to copy the text
+  try {
+    return document.execCommand('copy') // This will return true if successful
+  } catch (ex) {
+    console.warn('Copy to clipboard failed.', ex)
+    return false
+  } finally {
+    // Clean up the DOM by removing the textarea
+    document.body.removeChild(textarea)
+  }
+}
+
 document.body.appendChild(deleteButton)
 
 // Convert the Vue component to a custom element
-customElements.define('my-button', defineCustomElement(Button))
-const button = document.createElement('my-button')
-document.body.appendChild(button)
-
+customElements.define('copy-button', defineCustomElement(CopyHighlightButton))
+const copyButton = document.createElement('copy-button')
+document.body.appendChild(copyButton)
+copyButton.addEventListener('click', () => {
+  // Call your predefined function
+  const md = store.formatHighlightsAsMarkdown()
+  log.debug('md', md)
+  //add to clipboard
+  copyToClipboard(md)
+})
 log.info(`%c Tracking time spent on ${url}`, 'color: blue;')
 
 // mouseup event
