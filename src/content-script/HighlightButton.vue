@@ -12,6 +12,7 @@ const highlights = useStorage('highlights', {});
 const { shift, meta: command } = useMagicKeys();
 let highlightColor = "yellow";
 
+
 watchEffect(() => {
   if (shift.value) {
     highlightColor = "lightorange";
