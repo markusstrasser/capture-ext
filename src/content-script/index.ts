@@ -1,13 +1,10 @@
-// main.js
 import { useMagicKeys } from '@vueuse/core'
-import { defineCustomElement } from 'vue'
 import { cond, T } from 'ramda'
-import CopyHighlightButton from './CopyHighlights.vue'
 import log from 'loglevel'
 import Highlighter from './highlight'
 import createStore from './store'
 import createUserActivity from './userActivity'
-import { copyToClipboard, createButton } from '~/utils'
+import { copyToClipboard } from '~/utils'
 const { command, alt } = useMagicKeys()
 
 log.setDefaultLevel(log.levels.DEBUG) // Set logging level to DEBUG
@@ -17,12 +14,25 @@ const highlight = Highlighter(store).createHighlightFromSelection
 const userActivity = createUserActivity(store)
 userActivity.startTracking() // Start tracking if user is Idle
 
+store.addVisit()
 // ? BUTTONS and EVENT LISTENERS
-customElements.define('copy-button', defineCustomElement(CopyHighlightButton))
-createButton('Delete', store.deleteStore)
-createButton('copy-button', () =>
-  copyToClipboard(store.formatHighlightsAsMarkdown())
-)
+const deleteButton = document.createElement('button')
+deleteButton.textContent = 'Delete'
+deleteButton.style.cursor = 'pointer'
+deleteButton.addEventListener('click', () => store.deleteStore())
+document.body.appendChild(deleteButton)
+
+const copyButton = document.createElement('button')
+copyButton.textContent = 'Copy Highlights'
+copyButton.style.cursor = 'pointer'
+copyButton.addEventListener('click', (event) => {
+  event.preventDefault()
+  const md = store.toMarkdown()
+  log.debug('md', md)
+  copyToClipboard(md)
+})
+document.body.appendChild(copyButton)
+
 document.addEventListener('mouseup', onMouseUp)
 window.onbeforeunload = userActivity.stopTracking
 
@@ -33,7 +43,8 @@ const getModifier = cond([
   [() => alt.value, () => 'alt'],
   [T, () => null],
 ])
-function onMouseUp() {
+function onMouseUp(event) {
+  event.preventDefault()
   const selection = window.getSelection()
   if (selection && selection.toString().length > 0) {
     const modifier = getModifier()

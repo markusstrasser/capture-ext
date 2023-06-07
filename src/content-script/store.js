@@ -27,7 +27,7 @@ const createStore = (url) => ({
   addVisit() {
     this.state.value.visits.push(Date.now())
   },
-  formatHighlightsAsMarkdown() {
+  toMarkdown() {
     let markdown = `[${document.title}](${url})\n`
     this.state.value.highlights.forEach((highlight) => {
       markdown += ` - ${highlight.text}\n`
